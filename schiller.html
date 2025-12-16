@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macis Closing List</title>
+    <style>
+        :root {
+            --primary: #d35400; /* Burnt Orange */
+            --bg: #fdf6e3; /* Cream */
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --green: #27ae60;
+            --header-bg: #1a1a1a; /* Dark background for the white logo */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Logo Styling */
+        .logo-container {
+            text-align: center;
+            background-color: var(--header-bg);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .logo-img {
+            max-width: 200px; /* Adjust size here */
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Product Row Styling */
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .item-name {
+            font-weight: 600;
+            flex-grow: 1;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button.btn-count {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .btn-minus { background-color: #ecf0f1; color: #7f8c8d; }
+        .btn-plus { background-color: var(--primary); color: white; }
+
+        .count-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            width: 30px;
+            text-align: center;
+        }
+
+        /* Inputs */
+        .custom-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        textarea { resize: vertical; height: 80px; }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: transform 0.1s;
+        }
+
+        .action-btn:active { transform: scale(0.98); }
+
+        .btn-whatsapp {
+            background-color: var(--green);
+            color: white;
+        }
+
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .btn-add {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="logo-container">
+        <img src="https://macis-leipzig.de/wp-content/uploads/2019/03/macis_Logo_Leipzig_Weiss-1-768x498_neu-300x195.png" alt="Macis Leipzig" class="logo-img">
+    </div>
+
+    <div class="card" id="list-container">
+        </div>
+
+    <div class="card">
+        <h3>Extra Produkt hinzufügen</h3>
+        <div class="custom-input-group">
+            <input type="text" id="new-product-name" placeholder="z.B. Käsekuchen">
+            <button class="btn-add" onclick="addNewProduct()">+ Hinzufügen</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Notizen / Nachricht</h3>
+        <textarea id="custom-notes" placeholder="z.B. Madeleines mehr als genug. Schönen Abend!"></textarea>
+    </div>
+
+    <button class="action-btn btn-whatsapp" onclick="sendToWhatsapp()">
+        📤 An WhatsApp senden
+    </button>
+    
+    <button class="action-btn" style="background-color: #95a5a6; color: white;" onclick="copyText()">
+        📋 Text kopieren
+    </button>
+
+    <button class="action-btn btn-reset" onclick="resetAll()">
+        ↻ Alles zurücksetzen
+    </button>
+
+    <script>
+        // Default list based on your message
+        const defaultProducts = [
+            "Zitronenkuchen", "Marmorkuchen", "Karamel Torte", 
+            "Schoko Vegan", "Tonka-Flan", "Honigtorte", 
+            "Bratapfelkuchen", "Brownies", "Dominosteine", 
+            "Pekannuss-Tartellettes", "Weiße Cookies", "Veg Cookie", 
+            "Canneles", "Streuselkuchen", "Schokokuchen", 
+            "Zupfkuchen", "Zitronentartelettes", "Pistaziencookie"
+        ];
+
+        let products = JSON.parse(localStorage.getItem('bakeryProducts')) || 
+                       defaultProducts.map(name => ({ name: name, count: 0 }));
+
+        const container = document.getElementById('list-container');
+        const notesInput = document.getElementById('custom-notes');
+
+        // Render the list
+        function render() {
+            container.innerHTML = '';
+            products.forEach((prod, index) => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <span class="item-name">${prod.name}</span>
+                    <div class="controls">
+                        <button class="btn-count btn-minus" onclick="changeCount(${index}, -1)">-</button>
+                        <span class="count-display">${prod.count}</span>
+                        <button class="btn-count btn-plus" onclick="changeCount(${index}, 1)">+</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+            saveData();
+        }
+
+        // Change counts
+        function changeCount(index, delta) {
+            products[index].count += delta;
+            if (products[index].count < 0) products[index].count = 0;
+            render();
+        }
+
+        // Add new custom product manually
+        function addNewProduct() {
+            const input = document.getElementById('new-product-name');
+            const name = input.value.trim();
+            if (name) {
+                products.push({ name: name, count: 1 });
+                input.value = '';
+                render();
+            }
+        }
+
+        // Generate the text message
+        function generateMessage() {
+            let msg = "*RESTBESTAND HEUTE:*\n\n";
+            let hasItems = false;
+
+            products.forEach(p => {
+                if (p.count > 0) {
+                    msg += `- ${p.count} ${p.name}\n`;
+                    hasItems = true;
+                }
+            });
+
+            if (!hasItems) msg += "Alles ausverkauft!\n";
+
+            const notes = notesInput.value.trim();
+            if (notes) {
+                msg += `\n${notes}\n`;
+            } else {
+                msg += `\nSchönen Abend ☺`;
+            }
+
+            return msg;
+        }
+
+        // Send to WhatsApp
+        function sendToWhatsapp() {
+            const msg = generateMessage();
+            const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        // Copy to Clipboard
+        function copyText() {
+            const msg = generateMessage();
+            navigator.clipboard.writeText(msg).then(() => {
+                alert("Text kopiert!");
+            });
+        }
+
+        // Reset everything
+        function resetAll() {
+            if(confirm("Alles auf 0 setzen?")) {
+                products.forEach(p => p.count = 0);
+                notesInput.value = "";
+                render();
+            }
+        }
+
+        // Save state
+        function saveData() {
+            localStorage.setItem('bakeryProducts', JSON.stringify(products));
+        }
+
+        // Init
+        render();
+    </script>
+</body>
+</html>
