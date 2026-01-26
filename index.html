@@ -52,68 +52,32 @@
             margin-bottom: 20px;
         }
 
-        /* IMPORTANT / RETOURE CARD STYLING */
+        /* IMPORTANT / REMINDER CARD STYLING */
         .card.important {
-            border: 2px solid var(--danger);
+            border: 3px solid var(--danger);
             background-color: var(--danger-bg);
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
         }
 
         .important-header {
             color: var(--danger);
-            display: flex;
-            align-items: center;
-            gap: 10px;
             margin-top: 0;
+            font-size: 1.4rem;
+            text-transform: uppercase;
         }
 
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .btn-camera {
-            border: 2px dashed var(--danger);
-            color: var(--danger);
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
+        .reminder-text {
             font-size: 1.1rem;
             font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            box-sizing: border-box; 
-        }
-
-        .file-upload-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        #photo-preview {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .preview-thumb {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            color: #7f2c25;
+            line-height: 1.5;
         }
 
         /* Product Row Styling */
@@ -202,14 +166,12 @@
     </div>
 
     <div class="card important">
-        <h3 class="important-header">⚠ WICHTIG: Retoure Foto</h3>
-        <p style="margin-top:0; font-size: 0.9rem;">Bitte hier Foto der Retoure machen.</p>
-        
-        <div class="file-upload-wrapper">
-            <button class="btn-camera">📸 Kamera öffnen / Foto wählen</button>
-            <input type="file" id="retoure-photos" accept="image/*" multiple capture="environment" onchange="handleFileSelect(event)">
-        </div>
-        <div id="photo-preview"></div>
+        <h3 class="important-header">⚠ ACHTUNG</h3>
+        <p class="reminder-text">
+            📸 Bitte Foto vom<br>
+            <u>Retoure- / Umlagerungs-Zettel</u><br>
+            (aus der Kasse) machen und anhängen!
+        </p>
     </div>
 
     <div class="card" id="list-container">
@@ -241,7 +203,7 @@
     </button>
 
     <script>
-        // NEW LIST FROM IMAGE
+        // LIST FROM IMAGE
         const defaultProducts = [
             "Marmorkuchen",
             "Zitronenkuchen",
@@ -262,16 +224,11 @@
             "Madeleines"
         ];
 
-        // Changed key to v2 to ensure new list loads
         let products = JSON.parse(localStorage.getItem('macisProducts_v2')) || 
                        defaultProducts.map(name => ({ name: name, count: 0 }));
 
-        let photosTaken = false;
-
         const container = document.getElementById('list-container');
         const notesInput = document.getElementById('custom-notes');
-        const photoPreview = document.getElementById('photo-preview');
-        const photoInput = document.getElementById('retoure-photos');
 
         // Render the list
         function render() {
@@ -308,28 +265,6 @@
             }
         }
 
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            photoPreview.innerHTML = ""; 
-            
-            if (files.length > 0) {
-                photosTaken = true;
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement("img");
-                        img.src = e.target.result;
-                        img.className = "preview-thumb";
-                        photoPreview.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
-                }
-            } else {
-                photosTaken = false;
-            }
-        }
-
         function generateMessage() {
             let msg = "*RESTBESTAND HEUTE:*\n\n";
             let hasItems = false;
@@ -343,11 +278,8 @@
 
             if (!hasItems) msg += "Alles ausverkauft!\n";
 
-            if (photosTaken) {
-                msg += "\n📸 + FOTOS der Retoure (siehe Anhang)\n";
-            } else {
-                msg += "\n⚠️ Keine Retoure Fotos gemacht\n";
-            }
+            // Add text reminder in the message itself
+            msg += "\n📸 (Foto vom Zettel nicht vergessen!)\n";
 
             const notes = notesInput.value.trim();
             if (notes) {
@@ -360,25 +292,18 @@
         }
 
         function sendToWhatsapp() {
-            if (!photosTaken) {
-                const proceed = confirm("⚠️ ACHTUNG: Du hast kein Retoure-Foto gemacht. Trotzdem senden?");
-                if (!proceed) return;
-            }
+            // Popup Alert before sending
+            alert("BITTE BEACHTEN:\n\nVergiss nicht, das Foto vom RETOURE / UMLAGERUNGS ZETTEL in WhatsApp anzuhängen!");
 
             const msg = generateMessage();
             const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            
-            if (photosTaken) {
-                alert("Text erstellt! WhatsApp öffnet sich.\n\nBITTE FOTOS AUS GALERIE ANHÄNGEN.");
-            }
-            
             window.open(url, '_blank');
         }
 
         function copyText() {
             const msg = generateMessage();
             navigator.clipboard.writeText(msg).then(() => {
-                alert("Text kopiert! Bitte Fotos separat senden.");
+                alert("Text kopiert! Bitte Foto vom Zettel separat senden.");
             });
         }
 
@@ -386,9 +311,6 @@
             if(confirm("Alles auf 0 setzen?")) {
                 products.forEach(p => p.count = 0);
                 notesInput.value = "";
-                photoInput.value = ""; 
-                photoPreview.innerHTML = "";
-                photosTaken = false;
                 render();
             }
         }
