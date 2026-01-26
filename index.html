@@ -11,7 +11,9 @@
             --card-bg: #ffffff;
             --text: #2c3e50;
             --green: #27ae60;
-            --header-bg: #1a1a1a; /* Dark background for the white logo */
+            --header-bg: #1a1a1a;
+            --danger: #c0392b;
+            --danger-bg: #fadbd8;
         }
 
         body {
@@ -36,7 +38,7 @@
         }
 
         .logo-img {
-            max-width: 200px; /* Adjust size here */
+            max-width: 200px;
             height: auto;
             display: block;
             margin: 0 auto;
@@ -50,6 +52,70 @@
             margin-bottom: 20px;
         }
 
+        /* IMPORTANT / RETOURE CARD STYLING */
+        .card.important {
+            border: 2px solid var(--danger);
+            background-color: var(--danger-bg);
+        }
+
+        .important-header {
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .btn-camera {
+            border: 2px dashed var(--danger);
+            color: var(--danger);
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-sizing: border-box; 
+        }
+
+        .file-upload-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        #photo-preview {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preview-thumb {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
         /* Product Row Styling */
         .item-row {
             display: flex;
@@ -59,16 +125,9 @@
             border-bottom: 1px solid #eee;
         }
 
-        .item-name {
-            font-weight: 600;
-            flex-grow: 1;
-        }
+        .item-name { font-weight: 600; flex-grow: 1; padding-right: 10px; }
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .controls { display: flex; align-items: center; gap: 10px; }
 
         button.btn-count {
             width: 35px;
@@ -94,11 +153,7 @@
         }
 
         /* Inputs */
-        .custom-input-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
+        .custom-input-group { display: flex; gap: 10px; margin-top: 15px; }
         
         input[type="text"], textarea {
             width: 100%;
@@ -107,6 +162,7 @@
             border-radius: 8px;
             font-size: 1rem;
             font-family: inherit;
+            box-sizing: border-box; 
         }
 
         textarea { resize: vertical; height: 80px; }
@@ -126,17 +182,8 @@
 
         .action-btn:active { transform: scale(0.98); }
 
-        .btn-whatsapp {
-            background-color: var(--green);
-            color: white;
-        }
-
-        .btn-reset {
-            background-color: #e74c3c;
-            color: white;
-            margin-top: 20px;
-        }
-
+        .btn-whatsapp { background-color: var(--green); color: white; }
+        .btn-reset { background-color: #e74c3c; color: white; margin-top: 20px; }
         .btn-add {
             background-color: #3498db;
             color: white;
@@ -154,6 +201,17 @@
         <img src="https://macis-leipzig.de/wp-content/uploads/2019/03/macis_Logo_Leipzig_Weiss-1-768x498_neu-300x195.png" alt="Macis Leipzig" class="logo-img">
     </div>
 
+    <div class="card important">
+        <h3 class="important-header">⚠ WICHTIG: Retoure Foto</h3>
+        <p style="margin-top:0; font-size: 0.9rem;">Bitte hier Foto der Retoure machen.</p>
+        
+        <div class="file-upload-wrapper">
+            <button class="btn-camera">📸 Kamera öffnen / Foto wählen</button>
+            <input type="file" id="retoure-photos" accept="image/*" multiple capture="environment" onchange="handleFileSelect(event)">
+        </div>
+        <div id="photo-preview"></div>
+    </div>
+
     <div class="card" id="list-container">
         </div>
 
@@ -167,7 +225,7 @@
 
     <div class="card">
         <h3>Notizen / Nachricht</h3>
-        <textarea id="custom-notes" placeholder="z.B. Madeleines mehr als genug. Schönen Abend!"></textarea>
+        <textarea id="custom-notes" placeholder="z.B. Alles okay. Schönen Abend!"></textarea>
     </div>
 
     <button class="action-btn btn-whatsapp" onclick="sendToWhatsapp()">
@@ -183,21 +241,37 @@
     </button>
 
     <script>
-        // Default list based on your message
+        // NEW LIST FROM IMAGE
         const defaultProducts = [
-            "Zitronenkuchen", "Marmorkuchen", "Karamel Torte", 
-            "Schoko Vegan", "Tonka-Flan", "Honigtorte", 
-            "Bratapfelkuchen", "Brownies", "Dominosteine", 
-            "Pekannuss-Tartellettes", "Weiße Cookies", "Veg Cookie", 
-            "Canneles", "Streuselkuchen", "Schokokuchen", 
-            "Zupfkuchen", "Zitronentartelettes", "Pistaziencookie"
+            "Marmorkuchen",
+            "Zitronenkuchen",
+            "Zupfkuchen",
+            "Flan",
+            "Streuselkuchen",
+            "Veg. Schokokuchen",
+            "Veg. Cup Cakes (Karotte/Kürbis)",
+            "Cup Cakes",
+            "Brownie",
+            "Canneles",
+            "Cookies",
+            "Torten",
+            "Nussecken",
+            "Walnuss-Hügel",
+            "Zitronentartelette",
+            "Pekannusstartelette",
+            "Madeleines"
         ];
 
-        let products = JSON.parse(localStorage.getItem('bakeryProducts')) || 
+        // Changed key to v2 to ensure new list loads
+        let products = JSON.parse(localStorage.getItem('macisProducts_v2')) || 
                        defaultProducts.map(name => ({ name: name, count: 0 }));
+
+        let photosTaken = false;
 
         const container = document.getElementById('list-container');
         const notesInput = document.getElementById('custom-notes');
+        const photoPreview = document.getElementById('photo-preview');
+        const photoInput = document.getElementById('retoure-photos');
 
         // Render the list
         function render() {
@@ -218,14 +292,12 @@
             saveData();
         }
 
-        // Change counts
         function changeCount(index, delta) {
             products[index].count += delta;
             if (products[index].count < 0) products[index].count = 0;
             render();
         }
 
-        // Add new custom product manually
         function addNewProduct() {
             const input = document.getElementById('new-product-name');
             const name = input.value.trim();
@@ -236,7 +308,28 @@
             }
         }
 
-        // Generate the text message
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            photoPreview.innerHTML = ""; 
+            
+            if (files.length > 0) {
+                photosTaken = true;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        img.className = "preview-thumb";
+                        photoPreview.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                photosTaken = false;
+            }
+        }
+
         function generateMessage() {
             let msg = "*RESTBESTAND HEUTE:*\n\n";
             let hasItems = false;
@@ -250,6 +343,12 @@
 
             if (!hasItems) msg += "Alles ausverkauft!\n";
 
+            if (photosTaken) {
+                msg += "\n📸 + FOTOS der Retoure (siehe Anhang)\n";
+            } else {
+                msg += "\n⚠️ Keine Retoure Fotos gemacht\n";
+            }
+
             const notes = notesInput.value.trim();
             if (notes) {
                 msg += `\n${notes}\n`;
@@ -260,36 +359,44 @@
             return msg;
         }
 
-        // Send to WhatsApp
         function sendToWhatsapp() {
+            if (!photosTaken) {
+                const proceed = confirm("⚠️ ACHTUNG: Du hast kein Retoure-Foto gemacht. Trotzdem senden?");
+                if (!proceed) return;
+            }
+
             const msg = generateMessage();
             const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            
+            if (photosTaken) {
+                alert("Text erstellt! WhatsApp öffnet sich.\n\nBITTE FOTOS AUS GALERIE ANHÄNGEN.");
+            }
+            
             window.open(url, '_blank');
         }
 
-        // Copy to Clipboard
         function copyText() {
             const msg = generateMessage();
             navigator.clipboard.writeText(msg).then(() => {
-                alert("Text kopiert!");
+                alert("Text kopiert! Bitte Fotos separat senden.");
             });
         }
 
-        // Reset everything
         function resetAll() {
             if(confirm("Alles auf 0 setzen?")) {
                 products.forEach(p => p.count = 0);
                 notesInput.value = "";
+                photoInput.value = ""; 
+                photoPreview.innerHTML = "";
+                photosTaken = false;
                 render();
             }
         }
 
-        // Save state
         function saveData() {
-            localStorage.setItem('bakeryProducts', JSON.stringify(products));
+            localStorage.setItem('macisProducts_v2', JSON.stringify(products));
         }
 
-        // Init
         render();
     </script>
 </body>
