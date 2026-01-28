@@ -215,7 +215,7 @@
             "Cup Cakes",
             "Brownie",
             "Canneles",
-            "Cookies",
+            " Pistazien Cookies",
             "Torten",
             "Nussecken",
             "Walnuss-Hügel",
@@ -292,10 +292,7 @@
         }
 
         function sendToWhatsapp() {
-            // Popup Alert before sending
-            alert("BITTE BEACHTEN:\n\nVergiss nicht, das Foto vom RETOURE / UMLAGERUNGS ZETTEL in WhatsApp anzuhängen!");
-
-            const msg = generateMessage();
+              const msg = generateMessage();
             const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
         }
