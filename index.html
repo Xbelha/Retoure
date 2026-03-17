@@ -27,13 +27,12 @@
             margin-right: auto;
         }
 
-        /* Logo Styling */
         .logo-container {
             text-align: center;
             background-color: var(--header-bg);
             padding: 20px;
             border-radius: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
@@ -44,6 +43,31 @@
             margin: 0 auto;
         }
 
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(211, 84, 0, 0.3);
+        }
+
         .card {
             background: var(--card-bg);
             border-radius: 15px;
@@ -52,7 +76,6 @@
             margin-bottom: 20px;
         }
 
-        /* IMPORTANT / REMINDER CARD STYLING */
         .card.important {
             border: 3px solid var(--danger);
             background-color: var(--danger-bg);
@@ -78,9 +101,9 @@
             font-weight: bold;
             color: #7f2c25;
             line-height: 1.5;
+            margin-bottom: 0;
         }
 
-        /* Product Row Styling */
         .item-row {
             display: flex;
             justify-content: space-between;
@@ -89,8 +112,8 @@
             border-bottom: 1px solid #eee;
         }
 
+        .item-row:last-child { border-bottom: none; }
         .item-name { font-weight: 600; flex-grow: 1; padding-right: 10px; }
-
         .controls { display: flex; align-items: center; gap: 10px; }
 
         button.btn-count {
@@ -103,35 +126,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
         }
 
         .btn-minus { background-color: #ecf0f1; color: #7f8c8d; }
         .btn-plus { background-color: var(--primary); color: white; }
+        .count-display { font-size: 1.2rem; font-weight: bold; width: 30px; text-align: center; }
 
-        .count-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            width: 30px;
-            text-align: center;
-        }
-
-        /* Inputs */
         .custom-input-group { display: flex; gap: 10px; margin-top: 15px; }
-        
         input[type="text"], textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
-            font-family: inherit;
             box-sizing: border-box; 
         }
 
-        textarea { resize: vertical; height: 80px; }
-
-        /* Action Buttons */
         .action-btn {
             width: 100%;
             padding: 15px;
@@ -141,21 +151,11 @@
             font-weight: bold;
             cursor: pointer;
             margin-bottom: 10px;
-            transition: transform 0.1s;
         }
-
-        .action-btn:active { transform: scale(0.98); }
 
         .btn-whatsapp { background-color: var(--green); color: white; }
         .btn-reset { background-color: #e74c3c; color: white; margin-top: 20px; }
-        .btn-add {
-            background-color: #3498db;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            white-space: nowrap;
-        }
+        .btn-add { background-color: #3498db; color: white; padding: 10px; border: none; border-radius: 8px; }
 
     </style>
 </head>
@@ -163,6 +163,11 @@
 
     <div class="logo-container">
         <img src="https://macis-leipzig.de/wp-content/uploads/2019/03/macis_Logo_Leipzig_Weiss-1-768x498_neu-300x195.png" alt="Macis Leipzig" class="logo-img">
+    </div>
+
+    <div class="tab-container">
+        <button id="btn-kondi" class="tab-btn active" onclick="switchTab('kondi')">🍰 Konditorei</button>
+        <button id="btn-feinkost" class="tab-btn" onclick="switchTab('feinkost')">🧀 Feinkost</button>
     </div>
 
     <div class="card important">
@@ -174,8 +179,7 @@
         </p>
     </div>
 
-    <div class="card" id="list-container">
-        </div>
+    <div class="card" id="list-container"></div>
 
     <div class="card">
         <h3>Extra Produkt hinzufügen</h3>
@@ -190,50 +194,54 @@
         <textarea id="custom-notes" placeholder="z.B. Alles okay. Schönen Abend!"></textarea>
     </div>
 
-    <button class="action-btn btn-whatsapp" onclick="sendToWhatsapp()">
-        📤 An WhatsApp senden
-    </button>
-    
-    <button class="action-btn" style="background-color: #95a5a6; color: white;" onclick="copyText()">
-        📋 Text kopieren
-    </button>
-
-    <button class="action-btn btn-reset" onclick="resetAll()">
-        ↻ Alles zurücksetzen
-    </button>
+    <button class="action-btn btn-whatsapp" onclick="sendToWhatsapp()">📤 An WhatsApp senden</button>
+    <button class="action-btn" style="background-color: #95a5a6; color: white;" onclick="copyText()">📋 Text kopieren</button>
+    <button class="action-btn btn-reset" onclick="resetAll()">↻ Alles zurücksetzen</button>
 
     <script>
-        // LIST FROM IMAGE
-        const defaultProducts = [
-            "Marmorkuchen",
-            "Zitronenkuchen",
-            "Zupfkuchen",
-            "Flan",
-            "Streuselkuchen",
-            "Veg. Schokokuchen",
-            "Veg. Cup Cakes (Karotte/Kürbis)",
-            "Cup Cakes",
-            "Brownie",
-            "Canneles",
-            " Pistazien Cookies",
-            "Torten",
-            "Nussecken",
-            "Walnuss-Hügel",
-            "Zitronentartelette",
-            "Pekannusstartelette",
-            "Madeleines"
+        const defaultKondi = [
+            "Marmorkuchen", "Zitronenkuchen", "Zupfkuchen", "Flan", "Streuselkuchen",
+            "Veg. Schokokuchen", "Veg. Cup Cakes (Karotte/Kürbis)", "Cup Cakes", 
+            "Brownie", "Canneles", "Pistazien Cookies", "Torten", "Nussecken", 
+            "Walnuss-Hügel", "Zitronentartelette", "Pekannusstartelette", "Madeleines"
         ];
 
-        let products = JSON.parse(localStorage.getItem('macisProducts_v2')) || 
-                       defaultProducts.map(name => ({ name: name, count: 0 }));
+        const defaultFeinkost = [
+            "Gut Aufgelegt, Merrettich, rote Bete", "Veganer Aufschnitt, Lyoner Art", "Montanera Serrano",
+            "Puten Kochschinken Arresto de Tachino", "Salami Milano", "Mortadella",
+            "Dennree Gouda", "Dennree Emmentaler", "Dennree Bergkäse", "Dennree Frischkäse",
+            "Fräulein Peschke", "Scharfe Käthe", "Hummus Natur", "Dennree Butter",
+            "Söbbeke Mango Vanille", "Söbbecke Pfirsich Maracuja", "Söbbecke Blaubeere",
+            "Seezüngle Traube", "Seezüngle Birne", "Seezüngle Rhabarber",
+            "St. Georgs still", "St. Georgs medium", "Smoothie Erdbeere Himbeere",
+            "Smoothie Banane Yuzu Spirulina", "Smoothie Beere Acai", "Smoothie Mango Maracuja",
+            "Smoothie Spinat Minze Spirulina", "Shot Ingwer Natur", "Shot Eisen Shot",
+            "Shot Ingwer Kurkuma", "Shot Matcha", "Eier 10er Packung", "Eier 6er Packung",
+            "H-Milch 3,5%", "Bio Mandelmilch ungesüßt", "Double Choc Granola",
+            "Herbst Winter Granola", "Kokos Aprikose Granola", "Fruchtwiese Sauerkirsch",
+            "Fruchtwiese Waldebeere", "Fruchtwiese Aprikose", "Fruchtwiese Erdbeere"
+        ];
 
+        let data = {
+            kondi: JSON.parse(localStorage.getItem('macis_kondi_v3')) || defaultKondi.map(n => ({ name: n, count: 0 })),
+            feinkost: JSON.parse(localStorage.getItem('macis_feinkost_v3')) || defaultFeinkost.map(n => ({ name: n, count: 0 }))
+        };
+
+        let currentTab = 'kondi';
         const container = document.getElementById('list-container');
         const notesInput = document.getElementById('custom-notes');
 
-        // Render the list
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.getElementById('btn-kondi').classList.remove('active');
+            document.getElementById('btn-feinkost').classList.remove('active');
+            document.getElementById(`btn-${tabName}`).classList.add('active');
+            render();
+        }
+
         function render() {
             container.innerHTML = '';
-            products.forEach((prod, index) => {
+            data[currentTab].forEach((prod, index) => {
                 const row = document.createElement('div');
                 row.className = 'item-row';
                 row.innerHTML = `
@@ -250,8 +258,8 @@
         }
 
         function changeCount(index, delta) {
-            products[index].count += delta;
-            if (products[index].count < 0) products[index].count = 0;
+            data[currentTab][index].count += delta;
+            if (data[currentTab][index].count < 0) data[currentTab][index].count = 0;
             render();
         }
 
@@ -259,61 +267,64 @@
             const input = document.getElementById('new-product-name');
             const name = input.value.trim();
             if (name) {
-                products.push({ name: name, count: 1 });
+                data[currentTab].push({ name: name, count: 1 });
                 input.value = '';
                 render();
             }
         }
 
         function generateMessage() {
-            let msg = "*RESTBESTAND HEUTE:*\n\n";
+            let msg = "";
             let hasItems = false;
 
-            products.forEach(p => {
+            // Konditorei
+            let kondiMsg = "*RESTBESTAND HEUTE:*\n";
+            let subKondi = "";
+            data.kondi.forEach(p => {
                 if (p.count > 0) {
-                    msg += `- ${p.count} ${p.name}\n`;
+                    subKondi += `- ${p.count}x ${p.name}\n`;
                     hasItems = true;
                 }
             });
+            if (subKondi) msg += kondiMsg + subKondi + "\n";
 
-            if (!hasItems) msg += "Alles ausverkauft!\n";
+            // Feinkost (Ohne Restbestand-Satz)
+            let subFeinkost = "";
+            data.feinkost.forEach(p => {
+                if (p.count > 0) {
+                    subFeinkost += `- ${p.count}x ${p.name}\n`;
+                    hasItems = true;
+                }
+            });
+            if (subFeinkost) msg += "*🧀 FEINKOST:*\n" + subFeinkost + "\n";
 
-            // Add text reminder in the message itself
-            msg += "\n📸 (+ RETOURE / UMLAGERUNGS ZETTEL)\n";
+            if (!hasItems) msg = "Alles ausverkauft!\n";
 
             const notes = notesInput.value.trim();
-            if (notes) {
-                msg += `\n${notes}\n`;
-            } else {
-                msg += `\nSchönen Abend ☺`;
-            }
-
+            msg += notes ? notes : "Schönen Abend ☺";
             return msg;
         }
 
         function sendToWhatsapp() {
-              const msg = generateMessage();
-            const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
+            window.open(`https://wa.me/?text=${encodeURIComponent(generateMessage())}`, '_blank');
         }
 
         function copyText() {
-            const msg = generateMessage();
-            navigator.clipboard.writeText(msg).then(() => {
-                alert("Text kopiert! Bitte Foto vom Zettel separat senden.");
-            });
+            navigator.clipboard.writeText(generateMessage()).then(() => alert("Text kopiert!"));
         }
 
         function resetAll() {
-            if(confirm("Alles auf 0 setzen?")) {
-                products.forEach(p => p.count = 0);
+            if(confirm("Alle Listen auf 0 setzen?")) {
+                data.kondi.forEach(p => p.count = 0);
+                data.feinkost.forEach(p => p.count = 0);
                 notesInput.value = "";
                 render();
             }
         }
 
         function saveData() {
-            localStorage.setItem('macisProducts_v2', JSON.stringify(products));
+            localStorage.setItem('macis_kondi_v3', JSON.stringify(data.kondi));
+            localStorage.setItem('macis_feinkost_v3', JSON.stringify(data.feinkost));
         }
 
         render();
