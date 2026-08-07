@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Mein Abfahrtsmonitor - Gohlis/Möckern</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: #121212; 
+      color: #ffffff; 
+      margin: 2rem auto; 
+      max-width: 800px;
+    }
+    h1 { color: #fbbc04; font-size: 1.5rem; border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.8rem; border-bottom: 1px solid #2a2a2a; }
+    th { color: #888; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+    
+    .line { 
+      font-weight: bold; 
+      padding: 0.3rem 0.6rem; 
+      border-radius: 4px; 
+      display: inline-block; 
+      min-width: 35px;
+      text-align: center;
+    }
+    .tram { background: #d32f2f; color: white; }      
+    .bus { background: #1976d2; color: white; }       
+    .suburban { background: #2e7d32; color: white; }  
+    .night { background: #000000; color: white; border: 1px solid #555; } 
+    .unknown { background: #555; color: white; }
+
+    .station-name { font-size: 0.9rem; color: #bbb; }
+    .delay { color: #ff5252; font-size: 0.85rem; font-weight: bold; margin-left: 0.5rem; }
+    .on-time { color: #4caf50; font-size: 0.85rem; margin-left: 0.5rem; }
+    #status { font-size: 0.8rem; color: #888; float: right; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Abfahrten in der Nähe <span id="status">Lade System...</span></h1>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Haltestelle</th>
+        <th>Linie</th>
+        <th>Richtung</th>
+        <th>Abfahrt</th>
+      </tr>
+    </thead>
+    <tbody id="board">
+      <tr><td colspan="4">Suche Stationen und lade Fahrpläne (dies dauert ca. 5-10 Sekunden)...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const myStations = [
+      { 
+        searchName: "Leipzig Möckernscher Markt", 
+        shortName: "Möckernscher Markt",
+        linesToKeep: ["N11", "80"], 
+        id: null
+      },
+      { 
+        searchName: "Leipzig Erika-von-Brockdorff-Straße", 
+        shortName: "Erika-v.-Brockdorff-Str.",
+        linesToKeep: ["90"], 
+        id: null 
+      },
+      { 
+        searchName: "Leipzig-Möckern", 
+        shortName: "S-Bf Möckern",
+        linesToKeep: ["S1", "S3"], 
+        id: null 
+      },
+      { 
+        searchName: "Leipzig Slevogtstraße", 
+        shortName: "S-Bf Slevogtstraße",
+        linesToKeep: ["S1", "S3"], 
+        id: null 
+      }
+    ];
+
+    // Intelligente Funktion zum Vergleichen der Liniennamen
+    function isWantedLine(apiLineName, wantedLinesArray) {
+      if (!apiLineName) return false;
+      
+      let normalizedApi = apiLineName.toUpperCase()
+        .replace(/(BUS|TRAM|STR|STRASSENBAHN)/g, '')
+        .replace(/\s+/g, '');
+        
+      return wantedLinesArray.some(wanted => {
+        let normalizedWanted = wanted.toUpperCase().replace(/\s+/g, '');
+        return normalizedApi === normalizedWanted;
+      });
+    }
+
+    async function initializeStations() {
+      document.getElementById('status').innerText = "Suche Haltestellen...";
+      
+      for (let station of myStations) {
+        try {
+          const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(station.searchName)}&results=1&stops=true&addresses=false&poi=false`);
+          
+          if (!res.ok) throw new Error(`Server antwortete mit ${res.status}`);
+
+          const data = await res.json();
+          if (data && data.length > 0) {
+            station.id = data[0].id;
+            console.log(`Gefunden: ${station.searchName} hat die ID ${station.id}`);
+          }
+        } catch (e) {
+          console.error("Fehler bei der Stationssuche für", station.searchName, e);
+        }
+        
+        // PAUSE: 1 Sekunde warten, um den Server nicht zu überlasten
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      updateBoard();
+      // Aktualisiere danach alle 60 Sekunden
+      setInterval(updateBoard, 60000);
+    }
+
+    async function updateBoard() {
+      document.getElementById('status').innerText = "Aktualisiere Fahrpläne...";
+      let allDepartures = [];
+
+      for (let station of myStations) {
+        if (!station.id) continue;
+
+        try {
+          const url = `https://v6.db.transport.rest/stops/${station.id}/departures?duration=90&results=20&tram=true&bus=true&suburban=true&regional=true`;
+          const res = await fetch(url);
+          
+          if (res.ok) {
+            const data = await res.json();
+            const departures = data.departures || data;
+            
+            if (Array.isArray(departures)) {
+              departures.forEach(dep => {
+                const lineName = dep.line ? dep.line.name : "";
+                if (isWantedLine(lineName, station.linesToKeep)) {
+                  allDepartures.push({
+                    ...dep,
+                    stationShortName: station.shortName,
+                    sortTime: new Date(dep.when || dep.plannedWhen).getTime()
+                  });
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Fehler beim Laden der Abfahrten für", station.shortName, e);
+        }
+
+        // PAUSE: Auch hier 1 Sekunde warten zwischen den 4 Anfragen
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Chronologisch sortieren
+      allDepartures.sort((a, b) => a.sortTime - b.sortTime);
+      
+      renderBoard(allDepartures);
+      
+      const now = new Date();
+      document.getElementById('status').innerText = `Zuletzt aktualisiert: ${now.toLocaleTimeString('de-DE')}`;
+    }
+
+    function renderBoard(departures) {
+      const board = document.getElementById('board');
+      board.innerHTML = "";
+
+      if (departures.length === 0) {
+        board.innerHTML = "<tr><td colspan='4'>Keine Fahrten in den nächsten 90 Minuten gefunden.</td></tr>";
+        return;
+      }
+
+      departures.forEach(dep => {
+        const date = new Date(dep.when || dep.plannedWhen);
+        const timeString = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        
+        let delayHTML = "";
+        if (dep.delay > 0) {
+          delayHTML = `<span class="delay">+${Math.round(dep.delay / 60)}</span>`;
+        } else if (dep.delay === 0) {
+          delayHTML = `<span class="on-time">pünktlich</span>`;
+        }
+
+        let modeClass = "unknown";
+        const lineName = dep.line ? dep.line.name : "?";
+        
+        if (dep.line && dep.line.product) {
+          if (dep.line.product === "tram") modeClass = "tram";
+          if (dep.line.product === "bus") modeClass = "bus";
+          if (dep.line.product === "suburban" || dep.line.product === "regional") modeClass = "suburban";
+        }
+        if (lineName.includes("N")) modeClass = "night";
+
+        const row = `<tr>
+          <td class="station-name">${dep.stationShortName}</td>
+          <td><span class="line ${modeClass}">${lineName}</span></td>
+          <td>${dep.direction}</td>
+          <td>${timeString} ${delayHTML}</td>
+        </tr>`;
+        
+        board.innerHTML += row;
+      });
+    }
+
+    // Skript starten
+    initializeStations();
+
+  </script>
+</body>
+</html>
